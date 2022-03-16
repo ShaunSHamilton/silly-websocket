@@ -22,33 +22,35 @@ export default class PerfMetrics {
       this.calcAverage();
     }
     const average = this._average;
-    const metricsLen = this.metricsLen();
+    const metricsLen = this._metrics.length;
     const sum = this._metrics.reduce((acc, curr) => {
       return acc + Math.pow(curr.diff - average, 2);
     }, 0);
     this._standardDeviation = Math.sqrt(sum / metricsLen);
   }
   calcAverage() {
-    const metrics = this.metrics;
-    const metricsLen = this.metricsLen;
-    const sum = metrics.reduce((acc, curr) => {
+    const sum = this._metrics.reduce((acc, curr, i) => {
+      // Log progress every 1000 iterations
+      if (i % 1000 === 0) {
+        console.log(`${i}/${this._metrics.length}`);
+      }
       return acc + curr.diff;
     }, 0);
-    this._average = sum / metricsLen;
+    this._average = sum / this._metrics.length;
   }
-  get standardDeviation() {
+  standardDeviation() {
     return this._standardDeviation;
   }
-  get average() {
+  average() {
     return this._average;
   }
-  get metrics() {
+  metrics() {
     return this._metrics;
   }
-  get metricsLen() {
+  metricsLen() {
     return this._metrics.length;
   }
-  get outLiers() {
+  outLiers() {
     if (this._metrics.length === 0) {
       return [];
     }

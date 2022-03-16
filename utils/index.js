@@ -11,7 +11,7 @@ export async function findPortWebSocketServerListens(
   let batchSize = 20;
   let batch = 0;
   const opening = 30000;
-  const closing = 65535 - batchSize;
+  const closing = 32000 - batchSize;
   // const opening = 39000; // Used for debugging
   // const closing = opening + batchSize * 5; // Used for debugging
 
@@ -23,7 +23,7 @@ export async function findPortWebSocketServerListens(
         const start = opening + batch * batchSize;
         const end = start + batchSize;
         let closedSockets = 0;
-        for (let i = start; i <= end; i++) {
+        for (let i = start; i < end; i++) {
           if (stop) {
             break;
           }
@@ -61,7 +61,7 @@ export async function findPortWebSocketServerListens(
         }
         const interval = setInterval(() => {
           // Check if all sockets are closed
-          if (closedSockets >= end - start + 1) {
+          if (closedSockets >= end - start) {
             clearInterval(interval);
             return reject("No port found: " + start + " - " + end);
           }
@@ -71,21 +71,21 @@ export async function findPortWebSocketServerListens(
       info("Found port: ", port);
       if (numberOfPorts && numberOfPorts === listeningPorts.length) {
         perfMetrics.calcAverage();
-        debug(`Average time socket lived: ${perfMetrics.average}`);
+        debug(`Average time socket lived: ${perfMetrics.average()}`);
         return listeningPorts;
       } else if (!numberOfPorts) {
         perfMetrics.calcAverage();
-        debug(`Average time socket lived: ${perfMetrics.average}`);
+        debug(`Average time socket lived: ${perfMetrics.average()}`);
         return port;
       }
       batch++;
     } catch (e) {
       batch++;
-      warn(e);
+      // warn(e);
     }
   }
   perfMetrics.calcAverage();
-  debug(`Average time socket lived: ${perfMetrics.average}`);
+  debug(`Average time socket lived: ${perfMetrics.average()}`);
   return listeningPorts;
 }
 
@@ -107,7 +107,7 @@ const LogLevel = {
 export function info(...args) {
   if (
     process.env.LOG_LEVEL === LogLevel[LogLevel.info] ||
-    LogLevel[process.env.LOG_LEVEL] < LogLevel.debug
+    LogLevel[process.env.LOG_LEVEL] <= LogLevel.debug
   ) {
     console.info("%cINFO: ", "color: blue", ...args);
   }
@@ -115,7 +115,7 @@ export function info(...args) {
 export function warn(...args) {
   if (
     process.env.LOG_LEVEL === LogLevel[LogLevel.warn] ||
-    LogLevel[process.env.LOG_LEVEL] < LogLevel.info
+    LogLevel[process.env.LOG_LEVEL] <= LogLevel.info
   ) {
     console.warn("%cWARN: ", "color: orange", ...args);
   }
@@ -123,7 +123,7 @@ export function warn(...args) {
 export function error(...args) {
   if (
     process.env.LOG_LEVEL === LogLevel[LogLevel.error] ||
-    LogLevel[process.env.LOG_LEVEL] < LogLevel.warm
+    LogLevel[process.env.LOG_LEVEL] <= LogLevel.warm
   ) {
     console.error("%cERROR: ", "color: red", ...args);
   }
