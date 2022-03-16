@@ -8,10 +8,14 @@
   },
   "main": "index.js",
   "scripts": {
-    "start:s": "node index.js",
-    "dev:server": "nodemon index.js",
-    "dev:client": "live-server --port=8080 --entry-file='./client/index.html'",
-    "nodemon": "nodemon"
+    "start:s": "npm run rollup:server && npm run rollup:utils && node bundle.js",
+    "dev:server": "npm run rollup:server -- --watch && npm run rollup:utils -- --watch && nodemon bundle.js",
+    "dev:client": "npm run rollup:client -- --watch && npm run rollup:utils -- --watch && live-server --port=8080 --entry-file='./client/index.html'",
+    "nodemon": "nodemon",
+    "rollup": "npm run rollup:server && npm run rollup:client && npm run rollup:utils",
+    "rollup:server": "rollup index.js --file bundle.js --format cjs",
+    "rollup:client": "rollup client/index.js --file client/bundle.js --format iife",
+    "rollup:utils": "rollup utils/index.js --file utils/bundle.js --format umd --name 'utils'"
   },
   "author": "Shaun Hamilton",
   "license": "ISC",

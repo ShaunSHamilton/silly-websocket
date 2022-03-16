@@ -11,7 +11,7 @@ const WebSocketServer = WebSocket.WebSocketServer;
 
 async function main() {
   // Find peers
-  const peerPorts = await findPortWebSocketServerListens(WebSocket, {
+  const peerPorts = await findPortWebSocketServerListens(WebSocket, 1500, {
     numberOfPorts: 10,
   });
   info("peerPorts: ", peerPorts);
