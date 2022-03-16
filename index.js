@@ -1,18 +1,17 @@
-const WebSocket = require("ws");
-const {
+import WebSocket, { WebSocketServer } from "ws";
+import {
   findPortWebSocketServerListens,
   parseBuffer,
   parse,
   info,
   warn,
   error,
-} = require("./utils");
-const WebSocketServer = WebSocket.WebSocketServer;
+} from "./utils/index.js";
 
 async function main() {
   // Find peers
   const peerPorts = await findPortWebSocketServerListens(WebSocket, 1500, {
-    numberOfPorts: 10,
+    numberOfPorts: 4,
   });
   info("peerPorts: ", peerPorts);
   // Connect to peers

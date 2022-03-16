@@ -1,4 +1,8 @@
-async function findPortWebSocketServerListens(
+import PerfMetrics from "./perf-metrics";
+
+const perfMetrics = new PerfMetrics();
+
+export async function findPortWebSocketServerListens(
   WebSocketConstructor,
   timeout = 1500,
   { numberOfPorts = 4 } = {}
@@ -10,6 +14,7 @@ async function findPortWebSocketServerListens(
   const closing = 65535 - batchSize;
   // const opening = 39000; // Used for debugging
   // const closing = opening + batchSize * 5; // Used for debugging
+
   while (batch * batchSize + opening < closing) {
     try {
       const port = await new Promise(async (resolve, reject) => {
@@ -22,9 +27,9 @@ async function findPortWebSocketServerListens(
           if (stop) {
             break;
           }
-          let end = 0;
+          let endTime = 0;
           const socket = new WebSocketConstructor(`ws://localhost:${i}`);
-          let start = performance.now();
+          let startTime = performance.now();
 
           const time = setTimeout(() => {
             socket.close();
@@ -45,8 +50,12 @@ async function findPortWebSocketServerListens(
             clearTimeout(time);
           };
           socket.onclose = (_event) => {
-            end = performance.now();
-            debug(`Socket ${i} lived ${end - start}ms`);
+            endTime = performance.now();
+            perfMetrics.addMetric({
+              id: i,
+              startTime,
+              endTime,
+            });
             closedSockets++;
           };
         }
@@ -60,11 +69,13 @@ async function findPortWebSocketServerListens(
         }, 20);
       });
       info("Found port: ", port);
-      if (numberOfPorts && numberOfPorts > listeningPorts.length) {
-        listeningPorts.push(port);
-      } else if (numberOfPorts && numberOfPorts === listeningPorts.length) {
+      if (numberOfPorts && numberOfPorts === listeningPorts.length) {
+        perfMetrics.calcAverage();
+        debug(`Average time socket lived: ${perfMetrics.average}`);
         return listeningPorts;
       } else if (!numberOfPorts) {
+        perfMetrics.calcAverage();
+        debug(`Average time socket lived: ${perfMetrics.average}`);
         return port;
       }
       batch++;
@@ -73,44 +84,52 @@ async function findPortWebSocketServerListens(
       warn(e);
     }
   }
+  perfMetrics.calcAverage();
+  debug(`Average time socket lived: ${perfMetrics.average}`);
   return listeningPorts;
 }
 
-function parse(obj) {
+export function parse(obj) {
   return JSON.stringify(obj);
 }
 
-function parseBuffer(buf) {
+export function parseBuffer(buf) {
   return JSON.parse(buf.toString());
 }
 
-function info(...args) {
-  console.info("%cINFO: ", "color: blue", ...args);
-}
-function warn(...args) {
-  console.warn("%cWARN: ", "color: orange", ...args);
-}
-function error(...args) {
-  console.error("%cERROR: ", "color: red", ...args);
-}
-function debug(...args) {
-  console.debug("%cDEBUG: ", "color: green", ...args);
-}
-
-export {
-  findPortWebSocketServerListens,
-  parse,
-  parseBuffer,
-  info,
-  warn,
-  error,
+const LogLevel = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
 };
 
-// module.exports = {
-//   findPortWebSocketServerListens,
-//   parse,
-//   parseBuffer,
-//   info,
-//   warn,
-//   error,
-// };
+export function info(...args) {
+  if (
+    process.env.LOG_LEVEL === LogLevel[LogLevel.info] ||
+    LogLevel[process.env.LOG_LEVEL] < LogLevel.debug
+  ) {
+    console.info("%cINFO: ", "color: blue", ...args);
+  }
+}
+export function warn(...args) {
+  if (
+    process.env.LOG_LEVEL === LogLevel[LogLevel.warn] ||
+    LogLevel[process.env.LOG_LEVEL] < LogLevel.info
+  ) {
+    console.warn("%cWARN: ", "color: orange", ...args);
+  }
+}
+export function error(...args) {
+  if (
+    process.env.LOG_LEVEL === LogLevel[LogLevel.error] ||
+    LogLevel[process.env.LOG_LEVEL] < LogLevel.warm
+  ) {
+    console.error("%cERROR: ", "color: red", ...args);
+  }
+}
+export function debug(...args) {
+  if (process.env.LOG_LEVEL === LogLevel[LogLevel.debug]) {
+    console.debug("%cDEBUG: ", "color: green", ...args);
+  }
+}

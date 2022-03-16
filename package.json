@@ -9,8 +9,8 @@
   "main": "index.js",
   "scripts": {
     "start:s": "npm run rollup:server && npm run rollup:utils && node bundle.js",
-    "dev:server": "npm run rollup:server -- --watch && npm run rollup:utils -- --watch && nodemon bundle.js",
-    "dev:client": "npm run rollup:client -- --watch && npm run rollup:utils -- --watch && live-server --port=8080 --entry-file='./client/index.html'",
+    "dev:server": "npm run rollup:server && npm run rollup:utils && nodemon bundle.js",
+    "dev:client": "npm run rollup:client && npm run rollup:utils && live-server --port=8080 --entry-file='./client/index.html'",
     "nodemon": "nodemon",
     "rollup": "npm run rollup:server && npm run rollup:client && npm run rollup:utils",
     "rollup:server": "rollup index.js --file bundle.js --format cjs",
