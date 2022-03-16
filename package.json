@@ -21,6 +21,7 @@
   "devDependencies": {
     "live-server": "^1.2.1",
     "nodemon": "^2.0.15",
+    "rollup": "^2.70.1",
     "serve": "^13.0.2"
   }
 }

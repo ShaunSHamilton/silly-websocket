@@ -6,7 +6,7 @@ const {
   info,
   warn,
   error,
-} = require("./utils").default;
+} = require("./utils");
 const WebSocketServer = WebSocket.WebSocketServer;
 
 async function main() {

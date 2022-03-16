@@ -6,10 +6,10 @@ async function findPortWebSocketServerListens(
   const listeningPorts = [];
   let batchSize = 20;
   let batch = 0;
-  const opening = 30000;
-  const closing = 65535 - batchSize;
-  // const opening = 39300; // Used for debugging
-  // const closing = opening + batchSize * 5; // Used for debugging
+  // const opening = 30000;
+  // const closing = 65535 - batchSize;
+  const opening = 39000; // Used for debugging
+  const closing = opening + batchSize * 5; // Used for debugging
   while (batch * batchSize + opening < closing) {
     try {
       const port = await new Promise(async (resolve, reject) => {
@@ -18,7 +18,7 @@ async function findPortWebSocketServerListens(
         const start = opening + batch * batchSize;
         const end = start + batchSize;
         let closedSockets = 0;
-        for (let i = start; i < end; i++) {
+        for (let i = start; i <= end; i++) {
           if (stop) {
             break;
           }
@@ -43,12 +43,12 @@ async function findPortWebSocketServerListens(
         }
         const interval = setInterval(() => {
           // Check if all sockets are closed
-          if (closedSockets >= end - start) {
+          if (closedSockets >= end - start + 1) {
             clearInterval(interval);
             return reject("No port found: " + start + " - " + end);
           }
           // Poll every 10ms
-        }, 10);
+        }, 20);
       });
       info("Found port: ", port);
       if (numberOfPorts && numberOfPorts > listeningPorts.length) {
@@ -85,7 +85,16 @@ function error(...args) {
   console.error("%cERROR: ", "color: red", ...args);
 }
 
-export {
+// export {
+//   findPortWebSocketServerListens,
+//   parse,
+//   parseBuffer,
+//   info,
+//   warn,
+//   error,
+// };
+
+module.exports = {
   findPortWebSocketServerListens,
   parse,
   parseBuffer,
