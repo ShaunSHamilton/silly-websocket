@@ -91,22 +91,22 @@ const LogLevel = {
 };
 
 export function info(...args) {
-  if (LEVEL === LogLevel[LogLevel.info] || LogLevel[LEVEL] <= LogLevel.debug) {
+  if (LogLevel[LEVEL] >= LogLevel.info) {
     console.info("🔵%cINFO: ", "color: blue", ...args);
   }
 }
 export function warn(...args) {
-  if (LEVEL === LogLevel[LogLevel.warn] || LogLevel[LEVEL] <= LogLevel.info) {
+  if (LogLevel[LEVEL] >= LogLevel.warn) {
     console.warn("🟠%cWARN: ", "color: orange", ...args);
   }
 }
 export function error(...args) {
-  if (LEVEL === LogLevel[LogLevel.error] || LogLevel[LEVEL] <= LogLevel.warn) {
+  if (LogLevel[LEVEL] >= LogLevel.error) {
     console.error("🔴%cERROR: ", "color: red", ...args);
   }
 }
 export function debug(...args) {
-  if (LogLevel[LEVEL] <= LogLevel.debug) {
+  if (LogLevel[LEVEL] >= LogLevel.debug) {
     console.debug("🟢%cDEBUG: ", "color: green", ...args);
   }
 }
