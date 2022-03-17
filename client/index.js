@@ -11,12 +11,21 @@ const submitBtn = document.getElementById("chat-send");
 const messageBoard = document.getElementById("message-board");
 
 async function main() {
-  const clientPorts = await findPortWebSocketServerListens(WebSocket, {
-    timeout: 800,
-    startPort: 31000,
-    endPort: 31100,
-  });
-  info(`Found all these: ${clientPorts}`);
+  // TODO: Add loader to messageBoard
+  messageBoard.innerHTML = "<h2 style='color: red;'>Finding a server...</h2>";
+
+  const clientPorts = [];
+  while (clientPorts.length === 0) {
+    // Find listening ports on network.
+    clientPorts.push(
+      ...(await findPortWebSocketServerListens(WebSocket, {
+        timeout: 800,
+        startPort: 31000,
+        endPort: 31100,
+      }))
+    );
+    info(`Found all these: ${clientPorts}`);
+  }
   const CP = clientPorts[Math.floor(Math.random() * clientPorts.length)];
   info(`Connected on port ${CP}`);
   if (!CP) {
@@ -28,6 +37,8 @@ async function main() {
   socket.addEventListener("open", (_event) => {
     info("opened");
     sock("connect", "Client says 'Hello'");
+    // TODO: Remove loader
+    messageBoard.innerHTML = "";
   });
 
   // Listen for messages
