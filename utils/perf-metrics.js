@@ -77,7 +77,7 @@ const LogLevel = {
 };
 
 function debug(...args) {
-  if (LogLevel[process.env.LOG_LEVEL] <= LogLevel.debug) {
+  if (LogLevel[process.env.LOG_LEVEL] === LogLevel.debug) {
     console.debug("🟢%cDEBUG: ", "color: green", ...args);
   }
 }

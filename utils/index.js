@@ -34,6 +34,9 @@ export async function findPortWebSocketServerListens(
             socket.close();
             clearTimeout(time);
             listeningPorts.push(i);
+            if (numberOfPorts === listeningPorts.length) {
+              return resolve(listeningPorts);
+            }
           };
           socket.onerror = (_event) => {
             socket.close();
@@ -91,22 +94,22 @@ const LogLevel = {
 };
 
 export function info(...args) {
-  if (LogLevel[LEVEL] >= LogLevel.info) {
+  if (LogLevel[LEVEL] <= LogLevel.info) {
     console.info("🔵%cINFO: ", "color: blue", ...args);
   }
 }
 export function warn(...args) {
-  if (LogLevel[LEVEL] >= LogLevel.warn) {
+  if (LogLevel[LEVEL] <= LogLevel.warn) {
     console.warn("🟠%cWARN: ", "color: orange", ...args);
   }
 }
 export function error(...args) {
-  if (LogLevel[LEVEL] >= LogLevel.error) {
+  if (LogLevel[LEVEL] <= LogLevel.error) {
     console.error("🔴%cERROR: ", "color: red", ...args);
   }
 }
 export function debug(...args) {
-  if (LogLevel[LEVEL] >= LogLevel.debug) {
+  if (LogLevel[LEVEL] === LogLevel.debug) {
     console.debug("🟢%cDEBUG: ", "color: green", ...args);
   }
 }

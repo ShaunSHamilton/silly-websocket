@@ -19,9 +19,10 @@ async function main() {
     // Find listening ports on network.
     clientPorts.push(
       ...(await findPortWebSocketServerListens(WebSocket, {
-        timeout: 800,
+        timeout: 900,
         startPort: 31000,
         endPort: 31100,
+        numberOfPorts: 1,
       }))
     );
     info(`Found all these: ${clientPorts}`);
