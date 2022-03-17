@@ -65,9 +65,15 @@ async function main() {
     ws.on("message", (data) => {
       const message = parseBuffer(data);
       info(`From client (${req.socket.remoteAddress}): `, message.data);
+      sock("message", {
+        name: "Camper",
+        data: passiveAggressiveReplies[
+          Math.floor(Math.random() * passiveAggressiveReplies.length)
+        ],
+      });
     });
 
-    sock("connect", "Node says 'Hello!'");
+    sock("connect", { name: "Camper", data: "Node says 'Hello!'" });
 
     function sock(type, data = {}) {
       ws.send(parse({ event: type, data }));
@@ -102,3 +108,16 @@ async function findAvailablePort(startPort, endPort) {
     error(err);
   }
 }
+
+const passiveAggressiveReplies = [
+  "I'm not sure what you mean...",
+  "No, I do not want to.",
+  "Please try again.",
+  "I'm sorry, I don't understand.",
+  "I'm afraid I can't do that.",
+  "The answer is no.",
+  "Do you want to play a game?",
+  "I do not speak to strangers.",
+  "Send me another message, I dare you!",
+  "No, I do not know Tom.",
+];

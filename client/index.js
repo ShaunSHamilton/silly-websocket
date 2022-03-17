@@ -6,6 +6,10 @@ import {
   error,
 } from "../utils/index.js";
 
+const input = document.getElementById("chat-input");
+const submitBtn = document.getElementById("chat-send");
+const messageBoard = document.getElementById("message-board");
+
 async function main() {
   const clientPorts = await findPortWebSocketServerListens(WebSocket, {
     timeout: 800,
@@ -30,10 +34,18 @@ async function main() {
   socket.addEventListener("message", (event) => {
     const message = parseBuffer(event.data);
     info(`From Server (${event.origin}): `, message.data);
+    messageBoard.innerHTML += `<div><span>${message.data.name}: </span><p>${message.data.data}</p></div>`;
   });
   socket.addEventListener("error", (err) => {
     error(err);
   });
+
+  submitBtn.addEventListener("click", () => {
+    messageBoard.innerHTML += `<div><span>You: </span><p>${input.value}</p></div>`;
+    sock("message", input.value);
+    input.value = "";
+  });
+
   function sock(type, data = "") {
     socket.send(parse({ event: type, data }));
   }
