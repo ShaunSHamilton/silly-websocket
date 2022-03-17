@@ -1,12 +1,19 @@
 import {
   findPortWebSocketServerListens,
   parse,
+  parseBuffer,
   info,
   error,
 } from "../utils/index.js";
 
 async function main() {
-  const CP = await findPortWebSocketServerListens(WebSocket, 800);
+  const clientPorts = await findPortWebSocketServerListens(WebSocket, {
+    timeout: 800,
+    startPort: 31000,
+    endPort: 31100,
+  });
+  info(`Found all these: ${clientPorts}`);
+  const CP = clientPorts[Math.floor(Math.random() * clientPorts.length)];
   info(`Connected on port ${CP}`);
   if (!CP) {
     throw new Error("No port found");
@@ -16,16 +23,20 @@ async function main() {
   // Connection opened
   socket.addEventListener("open", (_event) => {
     info("opened");
-    socket.send(parse({ data: "Hello from client", type: "connect" }));
+    sock("connect", "Client says 'Hello'");
   });
 
   // Listen for messages
   socket.addEventListener("message", (event) => {
-    info("Message from server: ", event.data);
+    const message = parseBuffer(event.data);
+    info(`From Server (${event.origin}): `, message.data);
   });
   socket.addEventListener("error", (err) => {
     error(err);
   });
+  function sock(type, data = "") {
+    socket.send(parse({ event: type, data }));
+  }
 }
 
 main();

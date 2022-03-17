@@ -1,32 +1,27 @@
 import PerfMetrics from "./perf-metrics";
 
+const LEVEL = process.env.LOG_LEVEL;
+
 const perfMetrics = new PerfMetrics();
 
 export async function findPortWebSocketServerListens(
   WebSocketConstructor,
-  timeout = 1500,
-  { numberOfPorts = 4 } = {}
+  { timeout = 1500, startPort = 30000, endPort = 65000, numberOfPorts = 1 } = {}
 ) {
   const listeningPorts = [];
-  let batchSize = 20;
+  let batchSize = 10;
   let batch = 0;
-  const opening = 30000;
-  const closing = 32000 - batchSize;
-  // const opening = 39000; // Used for debugging
-  // const closing = opening + batchSize * 5; // Used for debugging
+  const opening = startPort;
+  const closing = endPort - batchSize;
 
   while (batch * batchSize + opening < closing) {
     try {
       const port = await new Promise(async (resolve, reject) => {
-        // Ping websockets until one responds
-        let stop = false;
+        // Ping websockets until response
         const start = opening + batch * batchSize;
         const end = start + batchSize;
         let closedSockets = 0;
         for (let i = start; i < end; i++) {
-          if (stop) {
-            break;
-          }
           let endTime = 0;
           const socket = new WebSocketConstructor(`ws://localhost:${i}`);
           let startTime = performance.now();
@@ -38,12 +33,7 @@ export async function findPortWebSocketServerListens(
             socket.send(parse({ data: "Testing for websocket", type: "ping" }));
             socket.close();
             clearTimeout(time);
-            if (!numberOfPorts) {
-              stop = true;
-              return resolve(i);
-            } else {
-              listeningPorts.push(i);
-            }
+            listeningPorts.push(i);
           };
           socket.onerror = (_event) => {
             socket.close();
@@ -66,22 +56,18 @@ export async function findPortWebSocketServerListens(
             return reject("No port found: " + start + " - " + end);
           }
           // Poll every 10ms
-        }, 20);
+        }, 10);
       });
       info("Found port: ", port);
-      if (numberOfPorts && numberOfPorts === listeningPorts.length) {
+      if (numberOfPorts === listeningPorts.length) {
         perfMetrics.calcAverage();
         debug(`Average time socket lived: ${perfMetrics.average()}`);
         return listeningPorts;
-      } else if (!numberOfPorts) {
-        perfMetrics.calcAverage();
-        debug(`Average time socket lived: ${perfMetrics.average()}`);
-        return port;
       }
       batch++;
     } catch (e) {
       batch++;
-      // warn(e);
+      debug(e);
     }
   }
   perfMetrics.calcAverage();
@@ -105,31 +91,22 @@ const LogLevel = {
 };
 
 export function info(...args) {
-  if (
-    process.env.LOG_LEVEL === LogLevel[LogLevel.info] ||
-    LogLevel[process.env.LOG_LEVEL] <= LogLevel.debug
-  ) {
-    console.info("%cINFO: ", "color: blue", ...args);
+  if (LEVEL === LogLevel[LogLevel.info] || LogLevel[LEVEL] <= LogLevel.debug) {
+    console.info("🔵%cINFO: ", "color: blue", ...args);
   }
 }
 export function warn(...args) {
-  if (
-    process.env.LOG_LEVEL === LogLevel[LogLevel.warn] ||
-    LogLevel[process.env.LOG_LEVEL] <= LogLevel.info
-  ) {
-    console.warn("%cWARN: ", "color: orange", ...args);
+  if (LEVEL === LogLevel[LogLevel.warn] || LogLevel[LEVEL] <= LogLevel.info) {
+    console.warn("🟠%cWARN: ", "color: orange", ...args);
   }
 }
 export function error(...args) {
-  if (
-    process.env.LOG_LEVEL === LogLevel[LogLevel.error] ||
-    LogLevel[process.env.LOG_LEVEL] <= LogLevel.warm
-  ) {
-    console.error("%cERROR: ", "color: red", ...args);
+  if (LEVEL === LogLevel[LogLevel.error] || LogLevel[LEVEL] <= LogLevel.warn) {
+    console.error("🔴%cERROR: ", "color: red", ...args);
   }
 }
 export function debug(...args) {
-  if (process.env.LOG_LEVEL === LogLevel[LogLevel.debug]) {
-    console.debug("%cDEBUG: ", "color: green", ...args);
+  if (LogLevel[LEVEL] <= LogLevel.debug) {
+    console.debug("🟢%cDEBUG: ", "color: green", ...args);
   }
 }

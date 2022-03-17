@@ -31,8 +31,8 @@ export default class PerfMetrics {
   calcAverage() {
     const sum = this._metrics.reduce((acc, curr, i) => {
       // Log progress every 1000 iterations
-      if (i % 1000 === 0) {
-        console.log(`${i}/${this._metrics.length}`);
+      if (i % 10 === 0) {
+        debug(`${i}/${this._metrics.length}`);
       }
       return acc + curr.diff;
     }, 0);
@@ -66,5 +66,18 @@ export default class PerfMetrics {
       (metric) => metric.diff > average + standardDeviation
     );
     return outLiers;
+  }
+}
+
+const LogLevel = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+};
+
+function debug(...args) {
+  if (LogLevel[process.env.LOG_LEVEL] <= LogLevel.debug) {
+    console.debug("🟢%cDEBUG: ", "color: green", ...args);
   }
 }

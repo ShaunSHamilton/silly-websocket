@@ -4,14 +4,17 @@ import {
   parseBuffer,
   parse,
   info,
-  warn,
+  debug,
   error,
 } from "./utils/index.js";
 
 async function main() {
   // Find peers
-  const peerPorts = await findPortWebSocketServerListens(WebSocket, 1500, {
-    numberOfPorts: 4,
+  const peerPorts = await findPortWebSocketServerListens(WebSocket, {
+    timeout: 400,
+    startPort: 30000,
+    endPort: 30100,
+    numberOfPorts: 3,
   });
   info("peerPorts: ", peerPorts);
   // Connect to peers
@@ -19,47 +22,52 @@ async function main() {
     const peerSocket = new WebSocket(`ws://localhost:${peerPort}`);
     // Connection opened
     peerSocket.on("open", () => {});
-    peerSocket.on("message", (data) => {});
+    peerSocket.on("message", (data) => {
+      const message = parseBuffer(data);
+      info(`From peer (${peerPort}): `, message.data);
+    });
     peerSocket.on("error", (err) => {
       error(err);
     });
   }
 
-  // If no peers exist, create a server for future peers to connect to
-  if (!peerPorts.length) {
-    const availablePort = await findAvailablePort();
-    const nodeWebSocketServer = new WebSocketServer({ port: availablePort });
-    info(`Listening on port ${availablePort}`);
+  // Create a server for future peers to connect to
+  const availableServerPort = await findAvailablePort(30000, 30100);
+  const nodeWebSocketServer = new WebSocketServer({
+    port: availableServerPort,
+  });
+  info(`Listening for peers on port ${availableServerPort}`);
 
-    nodeWebSocketServer.on("connection", (ws) => {
-      ws.on("message", function message(data) {
-        const parsedData = parseBuffer(data);
-        info(parsedData);
-      });
-
-      sock("connect", { data: "Node says 'Hello!!'" });
-
-      function sock(type, data = {}) {
-        ws.send(parse({ event: type, data }));
-      }
+  nodeWebSocketServer.on("connection", (ws, req) => {
+    ws.on("message", (data) => {
+      const message = parseBuffer(data);
+      info(`From peer (${req.socket.localPort}): `, message.data);
     });
-    nodeWebSocketServer.on("error", (err) => {
-      error(err);
-    });
-  }
+
+    sock("connect", "Node says 'Hello!!'");
+
+    function sock(type, data = {}) {
+      ws.send(parse({ event: type, data }));
+    }
+  });
+  nodeWebSocketServer.on("error", (err) => {
+    error(err);
+  });
 
   // Create a server to listen for client connections
-  const availablePort = await findAvailablePort();
-  const clientWebSocketServer = new WebSocketServer({ port: availablePort });
-  info(`Listening for clients on port: ${availablePort}`);
+  const availableClientPort = await findAvailablePort(31000, 31100);
+  const clientWebSocketServer = new WebSocketServer({
+    port: availableClientPort,
+  });
+  info(`Listening for clients on port: ${availableClientPort}`);
 
-  clientWebSocketServer.on("connection", (ws) => {
-    ws.on("message", function message(data) {
-      const parsedData = parseBuffer(data);
-      info(parsedData);
+  clientWebSocketServer.on("connection", (ws, req) => {
+    ws.on("message", (data) => {
+      const message = parseBuffer(data);
+      info(`From client (${req.socket.remoteAddress}): `, message.data);
     });
 
-    sock("connect", { data: "Client says 'Hello!!'" });
+    sock("connect", "Node says 'Hello!'");
 
     function sock(type, data = {}) {
       ws.send(parse({ event: type, data }));
@@ -69,14 +77,28 @@ async function main() {
 
 main();
 
-async function findAvailablePort() {
-  const server = require("net").createServer();
-  return await new Promise((resolve, reject) => {
-    server.listen(0, () => {
-      const port = server.address().port;
-      server.close(() => {
-        resolve(port);
-      });
+async function findAvailablePort(startPort, endPort) {
+  // Listen on ports between 30000 and 30100
+  try {
+    const availablePort = await new Promise((resolve, reject) => {
+      for (let port = startPort; port < endPort; port++) {
+        const server = require("net").createServer();
+        server.listen(port);
+        server.on("listening", () => {
+          server.close();
+          return resolve(port);
+        });
+        server.on("error", (err) => {
+          if (err.code === "EADDRINUSE") {
+            debug(`Port in use: ${port}`);
+          } else {
+            error(err);
+          }
+        });
+      }
     });
-  });
+    return availablePort;
+  } catch (err) {
+    error(err);
+  }
 }
